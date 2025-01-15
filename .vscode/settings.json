@@ -1,0 +1,5 @@
+{
+    "editor.cursorStyle": "line",
+    "editor.overtypeCursorStyle": "block",
+    "terminal.integrated.cursorWidth": 1
+}
