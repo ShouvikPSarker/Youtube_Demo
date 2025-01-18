@@ -38,9 +38,9 @@ const registerUser = Async1Handler(async (req , res) =>{
     const avatarlocalpath = req.files?.avatar[0]?.path
     // const coverimagelocalpath = req.files?.coverimage[0]?.path
 
-    let coverimaagelocalpath
+    let coverimagelocalpath;
     if(req.files && Array.isArray(req.files.coverimage) && req.files.coverimage.length > 0){
-        coverimaagelocalpath = req.files.coverimage[0].path
+        coverimagelocalpath = req.files.coverimage[0].path
     }
 
     if(!avatarlocalpath){
@@ -66,14 +66,15 @@ const registerUser = Async1Handler(async (req , res) =>{
 
     ///remove password and refresh token from the response
     const createduser = User.findById(user._id).select("-password -refreshtoken")
+    console.log("here it is :",createduser)
     // User checking and response
     if(!createduser){
         throw new ApiError(500 , "Server Errror !! User not created")
     }
 
     return await res.status(201).json(
-        new ApiResponse (200 , "User registered successfully", createduser
-    ))
+        new ApiResponse(201 , "User created successfully" , createduser)
+    )
 
 
 })
