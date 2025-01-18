@@ -26,7 +26,7 @@ const registerUser = Async1Handler(async (req , res) =>{
 
     //checking user if already registered
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{username} , {email}]
     })
     if(existedUser){
@@ -36,7 +36,12 @@ const registerUser = Async1Handler(async (req , res) =>{
     //check forr images and avatar
     console.log(req.files)
     const avatarlocalpath = req.files?.avatar[0]?.path
-    const coverimagelocalpath = req.files?.coverimage[0]?.path
+    // const coverimagelocalpath = req.files?.coverimage[0]?.path
+
+    let coverimaagelocalpath
+    if(req.files && Array.isArray(req.files.coverimage) && req.files.coverimage.length > 0){
+        coverimaagelocalpath = req.files.coverimage[0].path
+    }
 
     if(!avatarlocalpath){
         throw new ApiError(402 , "Please upload avatar")
