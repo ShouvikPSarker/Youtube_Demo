@@ -65,11 +65,11 @@ const registerUser = Async1Handler(async (req , res) =>{
     })
 
     ///remove password and refresh token from the response
-    const createduser = User.findById(user._id).select("-password -refreshtoken")
+    const createduser = await User.findById(user._id).select("-password -refreshtoken") // change await
     console.log("here it is :",createduser)
     // User checking and response
     if(!createduser){
-        throw new ApiError(500 , "Server Errror !! User not created")
+        throw new ApiError(500 , "wwwwwwwwwwwwwwwwwwww -Server Errror !! User not created")
     }
 
     return await res.status(201).json(
