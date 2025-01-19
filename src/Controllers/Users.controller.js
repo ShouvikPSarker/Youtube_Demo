@@ -66,8 +66,8 @@ const registerUser = Async1Handler(async (req , res) =>{
     })
 
     ///remove password and refresh token from the response
-    const createduser = User.findById(user._id).select("-password -refreshtoken")
-    console.log("here it is :",createduser)
+    const createduser = await User.findById(user._id).select("-password -refreshtoken")
+    // console.log("here it is :",createduser)
     // User checking and response
     if(!createduser){
         throw new ApiError(500 , "Server Errror !! User not created")
@@ -80,7 +80,73 @@ const registerUser = Async1Handler(async (req , res) =>{
 
 })
 
-const loginuser = Async2Handler((req , res) =>{
+const generatetokens = async (userid) =>{
+    try {
+        const user = await User.findById(userid)
+        const accesstoken = user.generateAccessToken()
+        const refreshtoken = user.generateRefreshToken()
+
+        user.refreshtoken  = refreshtoken
+        await user.save({validateBeforeSave : false})
+        
+        return { accesstoken , refreshtoken }
+
+    } catch (error) {
+        throw new ApiError (500 , "Something went wrong" ,error) 
+    }
+}
+
+
+
+const loginuser = Async2Handler(async (req , res) =>{
+    //get the details from the user
+    //username and email
+    //find the user
+    //access and refresh token
+    // send cookie
+
+    const{ username , email , password } = await req.body
+
+    if(!username || !email){
+        throw new ApiError(400 , "Please provide username or email")
+    }
+    //validation
+    const user = await User.findOne({
+        $or : [{username} , {email}]
+    })
+
+    if(!user){
+        throw new ApiError(404 , "User not found")
+    }
+    // password checking
+    const passwordcheck = await user.comparePassword(password)
+    if(!passwordcheck){
+        throw new ApiError(401 , "Invalid User Credentials")
+    }
+    
+    //access and refresh token
+
+    const {accesstoken , refreshtoken} = await generatetokens(user._id)
+    
+    const userdata = User.findById(user._id).select("-password -refreshtoken")
+    
+    //cookies setup
+    
+    const options = {
+        httponly : true,
+        secure : true
+    }
+    
+    return await res.status(200).cookie("accesstoken",accesstoken , options).cookie("refreshtoken" , refreshtoken , options).json(
+        new ApiResponse(
+            200 , 
+            "Successfully LoggedIn",
+            {
+                user : accesstoken , refreshtoken , userdata
+            }
+        )
+    )
+
 
 })
 
