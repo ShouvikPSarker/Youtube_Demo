@@ -1,4 +1,5 @@
 import Async1Handler from "../Utils/Async1handler.js";
+import Async2Handler from "../Utils/Async2handler.js";
 import ApiError from "../Utils/ApiError.js";
 import { User } from "../Models/User.model.js";
 import uploadfile from "../Services/Cloudinary.file.js";
@@ -79,4 +80,8 @@ const registerUser = Async1Handler(async (req , res) =>{
 
 })
 
-export default registerUser;
+const loginuser = Async2Handler((req , res) =>{
+
+})
+
+export {registerUser , loginuser} ;
