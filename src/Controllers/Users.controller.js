@@ -128,12 +128,12 @@ const loginuser = Async2Handler(async (req , res) =>{
 
     const {accesstoken , refreshtoken} = await generatetokens(user._id)
     
-    const userdata = User.findById(user._id).select("-password -refreshtoken")
+    const userdata = await User.findById(user._id).select("-password -refreshtoken")
     
     //cookies setup
     
     const options = {
-        httponly : true,
+        httpOnly : true,
         secure : true
     }
     
@@ -146,8 +146,29 @@ const loginuser = Async2Handler(async (req , res) =>{
             }
         )
     )
-
+    
 
 })
 
-export {registerUser , loginuser} ;
+const logoutuser = Async1Handler( async ( req , res ) => {
+    await User.findByIdAndUpdate(req.user._id , 
+        {
+            $set : {
+                refreshtoken : undefined
+            }
+        }
+    )
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+
+    return await res.status(200)
+    .clearCookie("accesstoken" , options)
+    .clearCookie("refreshtoken" ,options)
+    .json(
+         new ApiResponse (200 , "USer LoggedOut" , {})
+    )
+})
+
+export {registerUser , loginuser , logoutuser} ;
