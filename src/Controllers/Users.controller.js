@@ -230,7 +230,147 @@ const AccessRefreshtoken =  Async1Handler( async ( req , res ) =>{
 
 })
 
+// To Update the Password
+const UpdatePassword = Async2Handler( async ( req , res ) =>{
+    //find the user id
+    const user = await User.findById(req.user._id)
+    // find the passwords
+    const { oldpassword , newpassword } = req.body
+    // compare the passwords
+    const passwordCorrection = await user.comparePassword(oldpassword)
+    // if the password is not right
+    if(!passwordCorrection){
+        throw new ApiError(400 , 
+            "Invalid Password"
+        )
+    }
+    // If the Password is right then go forward and save it into database
+    user.password = newpassword
+    //saving into database only the password field and not other fields should be updated
+    const pass = await user.save({validateBeforeSave : false})
+    // send Api Response
+    return res
+    .status(200)
+    .json(
+        new ApiResponse (
+            400,
+            "Password Updated Successfully!",
+            {}
+        )
+    )
+
+})
+
+// Getting Current User
+const getCurrentUser = Async1Handler(async ( req , res ) => {
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(400 , "user fetched successfully" , req.body)
+    )
+}) 
+
+// Account Details Updation
+const UpdateAccount = Async1Handler(async(req , res ) => {
+    const {fullname , email} = req.body
+    if(!(fullname || email)){
+        throw new ApiError (400 , "All details are necessary")
+    }
+    const data = await User.findByIdAndUpdate(
+        req.user?._id ,
+        {
+            $set : {
+                fullname,
+                email 
+            }
+        },
+        {new : true}    
+    ).select("-password")
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(200,
+            "Fields are updated successfully",
+            data
+        )
+    )
+})
+// Avatar Updation
+const UpdateAvatar = Async2Handler (async (req , res ) => {
+    // finding the file path
+    const avatarPath = req.files?.path
+    if(!avatarPath){
+        throw new ApiError(401 , "path doesn't exist")
+    }
+    // if found , the path has been updated into cloudinary
+    const cloudpath = await uploadfile(avatarPath)
+    // if the path doesn't exist
+    if(!cloudpath.url){
+        throw new ApiError(401 , "File updation Error")
+    }
+    //Updation in avatar image
+    const avatarimage = await User.findByIdAndUpdate(req.user?._id,
+        {
+            $set : {
+                avatar : cloudpath.url
+            }
+        },
+        {new : true}
+    ).select("-password")
+    // sending Api Response
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(
+            200 ,
+            "Avatar uploaded successfully",
+            avatarimage
+        )
+    )
+} )
+
+// CoverImage Updation
+const UpdateCoverImage = Async1Handler( async (req , res ) => {
+    const coverimagepath = req.file?.path
+    if(!coverimagepath){
+        throw new ApiError(401 , "Error in coverImage path")
+    }
+    // if the path has been detected
+    const uploadedfile = await uploadfile(coverimagepath)
+    if(!uploadedfile.url){
+        throw new ApiError(401 , "Error while Updating CoverImage")
+    }
+    // if the file has been uploaded , then update the database
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                coverimage : uploadedfile.url
+            }
+        },
+        {new : true}    
+    ).select("-password")
+    // send Api Response
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            400,
+            "Coverimage updated successfully",
+            user
+        )
+    )
+})
 
 
-
-export {registerUser , loginuser , logoutuser , AccessRefreshtoken} ;
+export {
+    registerUser , 
+    loginuser , 
+    logoutuser , 
+    AccessRefreshtoken , 
+    UpdateAccount , 
+    UpdateAvatar ,
+    UpdateCoverImage ,
+    UpdatePassword , 
+    getCurrentUser
+} ;
