@@ -362,6 +362,85 @@ const UpdateCoverImage = Async1Handler( async (req , res ) => {
     )
 })
 
+// Aggregation Pipelininng
+const getUserChannel = Async2Handler(async ( req , res )=> {
+    // getting the username
+    const {username} = req.params
+    if(!username?.trim()){
+        throw new ApiError(401 , "Username is missing")
+    }
+    const channel  = await User.aggregate([
+        {
+            $match :{
+                username : username?.toLowerCase()
+            }
+        },
+        // subscriber count
+        {
+            $lookup : {
+                from : "subscribers",
+                localField : "_id",
+                foreignField : "channel",
+                as  : "Subscribers"
+            }
+        },
+        // Subscribed To
+        {
+            $lookup : {
+                from : "subscribers",
+                localField : "_id",
+                foreignField : "subscription",
+                as  : "SubscribeTo"
+            }
+        },
+        // Total values Count
+        {
+            $addFields : {
+                SubscriberCount : {
+                    $size : "$Subscribers"
+                },
+                SubscribedCount : {
+                    $size :  "$SubscribeTo"
+                },
+                // if User is subscribed or not
+                isSubscribed : {
+                    $cond  : {
+                        if : {
+                            $in : [req.user?._id , "$Subscribers.subscription"]
+                        },
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+           $project : {
+                fullname : 1,
+                isSubscribed : 1,
+                SubscriberCount : 1,
+                SubscribedCount : 1,
+                avatar : 1,
+                coverimage : 1,
+                username : 1
+           } 
+        }
+    ])
+    if(!channel?.length){
+        throw new ApiError ( 404 , " Channel doesn't exist ")
+    }
+    // response
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            201,
+            "channel is here!",
+            channel
+        )
+    )
+
+})
 
 export {
     registerUser , 
@@ -372,5 +451,6 @@ export {
     UpdateAvatar ,
     UpdateCoverImage ,
     UpdatePassword , 
-    getCurrentUser
+    getCurrentUser,
+    getUserChannel
 } ;
