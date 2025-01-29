@@ -5,6 +5,7 @@ import { User } from "../Models/User.model.js";
 import uploadfile from "../Services/Cloudinary.file.js";
 import ApiResponse from "../Utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose";
 
 const registerUser = Async1Handler(async (req , res) =>{
     // Get user input from Front_End
@@ -442,7 +443,61 @@ const getUserChannel = Async2Handler(async ( req , res )=> {
 
 })
 
-
+// watchhistory
+const getWatchHistory = Async1Handler( async ( req ,  res ) => {
+    const user = await User.aggregate([
+        {
+            $match : {
+                // this will convert the string type ID into MONGODB id 
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            },
+            
+        },
+        {
+            $lookup : {
+                from : "videos",
+                localField : "watchhistory",
+                foreignField  : "_id",
+                as : "watchhistory",
+                pipeline : [
+                    {
+                        $lookup : {
+                            from : "users",
+                            localField : "owner",
+                            foreignField : "_id",
+                            as : "owner",
+                            pipeline  : [
+                                {
+                                    $project : {
+                                        fullname : 1,
+                                        username : 1 ,
+                                        avatar  : 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields : {
+                            owner : {
+                                $first : "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200,
+            "watchhistory fetched successfully",
+            user[0].watchhistory
+        )
+    )
+})
 
 
 export {
@@ -455,5 +510,6 @@ export {
     UpdateCoverImage ,
     UpdatePassword , 
     getCurrentUser,
-    getUserChannel
+    getUserChannel,
+    getWatchHistory
 } ;
