@@ -5,15 +5,11 @@ const Async1Handler =  (requesthandler) => async (req , res , next ) => {
     try {
         return await requesthandler(req , res , next );
     } catch (error) {
-        console.log(`Error in Connection: ${error}`);
+        // console.log(`Error in Connection: ${error}`);
         res.status(error.code || 500).json({message: "Server Error"});
     }
 }
 
-
-
 // 
-
-
 
 export default Async1Handler;
